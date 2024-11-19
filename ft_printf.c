@@ -15,14 +15,26 @@
 int	handle_pointer(void *ptr)
 {
 	int	count;
+	int	ret;
 
 	count = 0;
 	if (ptr == NULL)
-		count += ft_putstr("(nil)");
+	{
+		ret = ft_putstr("0x0");
+		if (ret == -1)
+			return (-1);
+		count += ret;
+	}
 	else
 	{
-		count += ft_putstr("0x");
-		count += ft_puthex((unsigned long)ptr, 0);
+		ret = ft_putstr("0x");
+		if (ret == -1)
+			return (-1);
+		count += ret;
+		ret = ft_puthex((unsigned long)ptr, 0);
+		if (ret == -1)
+			return (-1);
+		count += ret;
 	}
 	return (count);
 }
@@ -30,44 +42,73 @@ int	handle_pointer(void *ptr)
 int	handle_conversion(char specifier, va_list *args)
 {
 	int	count;
+	int	ret;
 
 	count = 0;
-	if (specifier == 's')
-		count += ft_putstr(va_arg(*args, char *));
-	else if (specifier == 'd' || specifier == 'i')
-		count += ft_putnbr(va_arg(*args, int));
-	else if (specifier == 'u')
-		count += ft_putunsigned(va_arg(*args, unsigned int));
-	else if (specifier == 'c')
-		count += ft_putchar(va_arg(*args, int));
+	if (specifier == 'c')
+		ret = ft_putchar(va_arg(*args, int));
+	else if (specifier == 's')
+		ret = ft_putstr(va_arg(*args, char *));
 	else if (specifier == 'p')
-		count += handle_pointer(va_arg(*args, void *));
+		ret = handle_pointer(va_arg(*args, void *));
+	else if (specifier == 'd' || specifier == 'i')
+		ret = ft_putnbr(va_arg(*args, int));
+	else if (specifier == 'u')
+		ret = ft_putunsigned(va_arg(*args, unsigned int));
 	else if (specifier == 'x')
-		count += ft_puthex((unsigned long)va_arg(*args, unsigned int), 0);
+		ret = ft_puthex(va_arg(*args, unsigned int), 0);
 	else if (specifier == 'X')
-		count += ft_puthex((unsigned long)va_arg(*args, unsigned int), 1);
+		ret = ft_puthex(va_arg(*args, unsigned int), 1);
 	else if (specifier == '%')
-		count += ft_putchar('%');
-	return (count);
+		ret = ft_putchar('%');
+	else
+		ret = ft_putchar(specifier);
+	if (ret == -1)
+		return (-1);
+	return (count += ret);
+}
+
+static int	process_format(const char **format, va_list *args)
+{
+	int	ret;
+
+	if (**format == '%')
+	{
+		(*format)++;
+		if (**format)
+		{
+			ret = handle_conversion(**format, args);
+			if (ret == -1)
+				return (-1);
+			(*format)++;
+			return (ret);
+		}
+		return (0);
+	}
+	ret = ft_putchar(**format);
+	if (ret == -1)
+		return (-1);
+	(*format)++;
+	return (ret);
 }
 
 int	ft_printf(const char *format, ...)
 {
 	va_list	args;
 	int		count;
+	int		ret;
 
 	count = 0;
 	va_start(args, format);
 	while (*format)
 	{
-		if (*format == '%')
+		ret = process_format(&format, &args);
+		if (ret == -1)
 		{
-			format++;
-			count += handle_conversion(*format, &args);
+			va_end(args);
+			return (-1);
 		}
-		else
-			count += ft_putchar(*format);
-		format++;
+		count += ret;
 	}
 	va_end(args);
 	return (count);
