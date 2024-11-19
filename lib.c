@@ -10,64 +10,95 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
+#include "ft_printf.h"
 
 int	ft_putchar(char c)
 {
-	write(1, &c, 1);
-	return (1);
+	int	ret;
+
+	ret = write(1, &c, 1);
+	if (ret == -1)
+		return (-1);
+	return (ret);
 }
 
 int	ft_putstr(char *str)
 {
 	int	count;
+	int	ret;
 
 	count = 0;
 	if (str == NULL)
 	{
-		count += ft_putstr("(null)");
-		return (count);
+		ret = write(1, "(null)", 6);
+		if (ret == -1)
+			return (-1);
+		return (6);
 	}
 	while (*str)
 	{
-		count += ft_putchar(*str);
+		ret = ft_putchar(*str);
+		if (ret == -1)
+			return (-1);
+		count += ret;
 		str++;
 	}
 	return (count);
 }
 
+int	ft_putnbr(int n)
+{
+	int		count;
+	int		ret;
+	long	num;
+
+	count = 0;
+	num = n;
+	if (num < 0)
+	{
+		ret = ft_putchar('-');
+		if (ret == -1)
+			return (-1);
+		count += ret;
+		num = -num;
+	}
+	if (num >= 10)
+	{
+		ret = ft_putnbr(num / 10);
+		if (ret == -1)
+			return (-1);
+		count += ret;
+	}
+	ret = ft_putchar((num % 10) + '0');
+	if (ret == -1)
+		return (-1);
+	return (count += ret);
+}
+
 int	ft_putunsigned(unsigned int n)
 {
 	int	count;
+	int	ret;
 
 	count = 0;
-	if (n > 9)
-		count += ft_putunsigned(n / 10);
-	count += ft_putchar(n % 10 + '0');
-	return (count);
-}
-
-int	ft_putnbr(int n)
-{
-	int	count;
-
-	count = 0;
-	if (n == -2147483648)
-		return (ft_putstr("-2147483648"));
-	if (n < 0)
+	if (n >= 10)
 	{
-		count += ft_putchar('-');
-		n = -n;
+		ret = ft_putunsigned(n / 10);
+		if (ret == -1)
+			return (-1);
+		count += ret;
 	}
-	if (n > 9)
-		count += ft_putnbr(n / 10);
-	count += ft_putchar(n % 10 + '0');
+	ret = ft_putchar((n % 10) + '0');
+	if (ret == -1)
+		return (-1);
+	count += ret;
 	return (count);
 }
 
 int	ft_puthex(unsigned long n, int uppercase)
 {
 	int		count;
+	int		ret;
 	char	*hex_digits;
 
 	count = 0;
@@ -76,7 +107,16 @@ int	ft_puthex(unsigned long n, int uppercase)
 	else
 		hex_digits = "0123456789abcdef";
 	if (n >= 16)
-		count += ft_puthex(n / 16, uppercase);
-	count += ft_putchar(hex_digits[n % 16]);
+	{
+		ret = ft_puthex(n / 16, uppercase);
+		if (ret == -1)
+			return (-1);
+		count += ret;
+	}
+	ret = ft_putchar(hex_digits[n % 16]);
+	if (ret == -1)
+		return (-1);
+	count += ret;
 	return (count);
 }
+
